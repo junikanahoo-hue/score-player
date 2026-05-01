@@ -671,9 +671,9 @@ function playByIdx(idx) {
 }
 
 function playNext() {
-  if (!S.isMatchPlay) return; // サムネイルクリック時は次に進まない
+  if (!S.isMatchPlay) return; // サムネイルクリック時は自動で次に進まない
   if (S.matchQIdx < S.matchQueue.length - 1) playMatchByIdx(S.matchQIdx + 1);
-  else { // リスト最後で止まる
+  else {
     S.isMatchPlay = false;
     S.player.stopVideo();
     stopPoll();
@@ -682,7 +682,7 @@ function playNext() {
 }
 
 function playPrev() {
-  if (S.matchQIdx > 0) playMatchByIdx(S.matchQIdx - 1);
+  if (S.isMatchPlay && S.matchQIdx > 0) playMatchByIdx(S.matchQIdx - 1);
 }
 
 document.getElementById('btn-play').addEventListener('click', () => {
@@ -719,8 +719,29 @@ document.getElementById('btn-stop').addEventListener('click', () => {
   S.player.pauseVideo(); stopPoll();
   document.getElementById('now-title').textContent = '再生停止中';
 });
-document.getElementById('btn-prev-t').addEventListener('click', () => { if (S.ready) playPrev(); });
-document.getElementById('btn-next-t').addEventListener('click', () => { if (S.ready && S.isMatchPlay) playMatchByIdx(S.matchQIdx + 1); });
+document.getElementById('btn-prev-t').addEventListener('click', () => {
+  if (!S.ready) return;
+  if (S.isMatchPlay) {
+    // 連続再生中はマッチキューで前へ
+    if (S.matchQIdx > 0) playMatchByIdx(S.matchQIdx - 1);
+  } else {
+    // サムネイルor▽再生中は通常キューで前へ
+    const curIdx = S.queue.findIndex(v => v.videoId === S.playingVid);
+    if (curIdx > 0) playByIdx(curIdx - 1);
+  }
+});
+
+document.getElementById('btn-next-t').addEventListener('click', () => {
+  if (!S.ready) return;
+  if (S.isMatchPlay) {
+    // 連続再生中はマッチキューで次へ
+    if (S.matchQIdx < S.matchQueue.length - 1) playMatchByIdx(S.matchQIdx + 1);
+  } else {
+    // サムネイルor▽再生中は通常キューで次へ
+    const curIdx = S.queue.findIndex(v => v.videoId === S.playingVid);
+    if (curIdx >= 0 && curIdx < S.queue.length - 1) playByIdx(curIdx + 1);
+  }
+});
 
 // =====================================================================
 // PLAYLIST
